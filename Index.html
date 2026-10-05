@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body { background-color: #f4f6f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .card-balance { border-radius: 14px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
+    .badge-verde { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+    .badge-amarillo { background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+    .badge-rojo { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+    .nav-tabs .nav-link { font-weight: 600; color: #6c757d; }
+    .nav-tabs .nav-link.active { color: #0d6efd; }
+  </style>
+</head>
+<body>
+
+<div class="container py-4">
+
+  <!-- ================= VISTA 1: INICIO DE SESIÓN ================= -->
+  <div id="view-login" class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card card-balance p-4 shadow-sm bg-white">
+        <div class="text-center mb-3">
+          <i class="bi bi-bank2 text-primary" style="font-size: 3rem;"></i>
+          <h4 class="fw-bold mt-2">Banca SENA</h4>
+          <p class="text-muted small">Gestión Financiera del Aula por Fichas</p>
+        </div>
+        <div id="login-error" class="alert alert-danger d-none p-2 small"></div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Usuario</label>
+          <input type="text" id="txt-user" class="form-control" placeholder="Ej: 8356872 o tu usuario" autocapitalize="none" autocorrect="off">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Contraseña</label>
+          <input type="password" id="txt-pass" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="chk-recordar" checked>
+          <label class="form-check-label small text-muted" for="chk-recordar">
+            <i class="bi bi-shield-lock"></i> Recordar mis datos en este equipo / móvil
+          </label>
+        </div>
+        <button class="btn btn-primary w-100 fw-bold mb-3" onclick="iniciarSesion()">
+          <span id="btn-text">Ingresar</span>
+          <span id="btn-spinner" class="spinner-border spinner-border-sm d-none"></span>
+        </button>
+        <div class="text-center border-top pt-3">
+          <a href="#" class="small text-decoration-none fw-semibold text-primary" onclick="abrirModalActivacion()">
+            <i class="bi bi-person-plus-fill"></i> ¿Es tu primera vez? Crea tu clave aquí
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VISTA 2: DASHBOARD APRENDIZ ================= -->
+  <div id="view-dashboard" class="d-none">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="fw-bold mb-0" id="dash-nombre">Aprendiz</h5>
+        <span class="text-muted small" id="dash-id">AP-00</span> | <span class="badge bg-secondary" id="dash-ficha">Ficha: --</span>
+      </div>
+      <div>
+        <button class="btn btn-primary btn-sm me-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTransferir">
+          <i class="bi bi-send-fill"></i> Transferir
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="cerrarSesion()">Salir</button>
+      </div>
+    </div>
+
+    <!-- BOTÓN DE ASISTENCIA EN TIEMPO REAL -->
+    <div class="alert alert-primary shadow-sm border-0 d-flex flex-wrap align-items-center justify-content-between mb-4 p-3">
+      <div>
+        <h6 class="fw-bold mb-1"><i class="bi bi-geo-alt-fill text-danger"></i> Registro de Asistencia a Clase</h6>
+        <p class="small text-muted mb-0">Toca el botón apenas entres al aula para recibir el salario de la sesión.</p>
+      </div>
+      <button id="btn-reportar-asistencia" class="btn btn-success fw-bold px-3 py-2 mt-2 mt-md-0" onclick="reportarMiAsistencia()">
+        <i class="bi bi-fingerprint"></i> Reportar mi Entrada
+      </button>
+    </div>
+
+    <!-- TARJETAS SALDO / BURÓ -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card card-balance p-3 bg-white border-start border-4 border-primary">
+          <span class="text-muted small fw-semibold">Cuenta Bancaria Aula</span>
+          <h3 class="fw-bold mt-1" id="dash-banco">$0</h3>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-balance p-3 bg-white border-start border-4 border-success">
+          <span class="text-muted small fw-semibold">Caja Menor (Efectivo)</span>
+          <h3 class="fw-bold mt-1" id="dash-caja">$0</h3>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-balance p-3 bg-white border-start border-4 border-info">
+          <span class="text-muted small fw-semibold">Score Buró (Mínimo 70%)</span>
+          <div class="d-flex align-items-center justify-content-between mt-1">
+            <h3 class="fw-bold mb-0" id="dash-score">0</h3>
+            <span class="badge" id="badge-aprobacion">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIAL DE MOVIMIENTOS -->
+    <div class="card card-balance p-3 bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history"></i> Historial de Movimientos</h6>
+        <button class="btn btn-sm btn-outline-primary" onclick="recargarMovimientos()">
+          <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle small">
+          <thead class="table-light">
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Detalle</th>
+              <th>Impacto Buró</th>
+              <th class="text-end">Monto Neto</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-movimientos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VISTA 3: PANEL PROFESOR / EMPRESA (MULTI-FICHA) ================= -->
+  <div id="view-docente" class="d-none">
+    
+    <!-- BARRA SUPERIOR CON SELECTOR DE FICHA -->
+    <div class="card card-balance p-3 bg-white mb-3 shadow-sm border-top border-4 border-dark">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-mortarboard-fill text-primary fs-3"></i>
+          <div>
+            <h4 class="fw-bold mb-0">Panel Instructor SENA</h4>
+            <small class="text-muted">Gestión por Grupos y Fichas de Formación</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <label class="small fw-bold text-nowrap"><i class="bi bi-collection-fill text-primary"></i> Ficha Activa:</label>
+          <select id="sel-ficha-activa" class="form-select form-select-sm fw-bold border-primary text-primary" style="min-width: 150px;" onchange="cambiarFichaDocente()">
+            <option value="3536349">Ficha 3536349</option>
+          </select>
+          <button class="btn btn-outline-primary btn-sm" onclick="crearNuevaFichaModal()" title="Agregar nueva ficha"><i class="bi bi-plus-circle"></i> Nueva Ficha</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: ACTIVAR CLASE + INFORME ASISTENTES Y FALTANTES -->
+    <div class="card card-balance p-3 bg-white border-start border-4 border-success mb-4 shadow-sm">
+      <div class="row align-items-center">
+        <div class="col-md-5">
+          <h5 class="fw-bold mb-1"><i class="bi bi-play-circle-fill text-success"></i> Control de Sesión de Clase</h5>
+          <p class="text-muted small mb-0" id="txt-estado-sesion">Estado: Comprobando...</p>
+        </div>
+        <div class="col-md-7 text-md-end mt-2 mt-md-0 d-flex flex-wrap justify-content-md-end gap-2 align-items-center">
+          <select id="sel-numero-clase" class="form-select form-select-sm" style="max-width: 140px;">
+            <option value="Clase 1">Clase 1</option>
+            <option value="Clase 2">Clase 2</option>
+            <option value="Clase 3">Clase 3</option>
+            <option value="Clase 4">Clase 4</option>
+            <option value="Clase 5">Clase 5</option>
+            <option value="Clase 6">Clase 6</option>
+            <option value="Clase 7">Clase 7</option>
+            <option value="Clase 8">Clase 8</option>
+            <option value="Clase 9">Clase 9</option>
+            <option value="Clase 10">Clase 10</option>
+            <option value="Clase 11">Clase 11</option>
+            <option value="Clase 12">Clase 12</option>
+          </select>
+          <div class="input-group input-group-sm" style="max-width: 160px;">
+            <span class="input-group-text">$</span>
+            <input type="number" id="txt-sesion-valor-base" class="form-control" value="50000" placeholder="Base">
+          </div>
+          <button id="btn-activar-clase" class="btn btn-success btn-sm fw-bold" onclick="iniciarClaseDocente()">
+            <i class="bi bi-broadcast"></i> Iniciar Clase
+          </button>
+          <button id="btn-cerrar-clase" class="btn btn-outline-danger btn-sm fw-bold d-none" onclick="finalizarClaseDocente()">
+            <i class="bi bi-stop-circle"></i> Cerrar Entrada
+          </button>
+        </div>
+      </div>
+
+      <hr class="my-3">
+
+      <!-- CABECERA DEL INFORME CON PESTAÑAS (ASISTIERON VS FALTANTES) -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <ul class="nav nav-tabs card-header-tabs" id="tabAsistencia" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" id="tab-asistentes-btn" data-bs-toggle="tab" data-bs-target="#tab-asistentes" type="button">
+              <i class="bi bi-check-circle-fill text-success"></i> Registrados (<span id="cnt-asistentes">0</span>)
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tab-faltantes-btn" data-bs-toggle="tab" data-bs-target="#tab-faltantes" type="button">
+              <i class="bi bi-exclamation-diamond-fill text-danger"></i> Faltan por Registrarse (<span id="cnt-faltantes">0</span>)
+            </button>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+          <select id="sel-filtro-informe-clase" class="form-select form-select-sm" style="max-width: 150px;" onchange="consultarInformeAsistentes()">
+            <option value="Clase 1">Ver Clase 1</option>
+            <option value="Clase 2">Ver Clase 2</option>
+            <option value="Clase 3">Ver Clase 3</option>
+            <option value="Clase 4">Ver Clase 4</option>
+            <option value="Clase 5">Ver Clase 5</option>
+            <option value="Clase 6">Ver Clase 6</option>
+            <option value="Clase 7">Ver Clase 7</option>
+            <option value="Clase 8">Ver Clase 8</option>
+            <option value="Clase 9">Ver Clase 9</option>
+            <option value="Clase 10">Ver Clase 10</option>
+            <option value="Clase 11">Ver Clase 11</option>
+            <option value="Clase 12">Ver Clase 12</option>
+          </select>
+          <button class="btn btn-sm btn-outline-secondary" onclick="consultarInformeAsistentes()"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+      </div>
+
+      <!-- CONTENIDO DE LAS DOS PESTAÑAS -->
+      <div class="tab-content" id="tabAsistenciaContent">
+        <!-- 1. ASISTENTES -->
+        <div class="tab-pane fade show active" id="tab-asistentes">
+          <div class="table-responsive border rounded bg-light" style="max-height: 220px; overflow-y: auto;">
+            <table class="table table-sm table-hover align-middle small mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>ID</th>
+                  <th>Aprendiz</th>
+                  <th>Documento</th>
+                  <th>Hora Registro</th>
+                  <th class="text-end">Monto Recibido</th>
+                  <th>Detalle / Tardanza</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-asistentes-clase-cuerpo">
+                <tr><td colspan="6" class="text-center text-muted py-2">Selecciona una clase para ver el informe.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. FALTANTES -->
+        <div class="tab-pane fade" id="tab-faltantes">
+          <div class="table-responsive border rounded bg-light" style="max-height: 220px; overflow-y: auto;">
+            <table class="table table-sm table-hover align-middle small mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>ID</th>
+                  <th>Aprendiz Pendiente</th>
+                  <th>Documento</th>
+                  <th class="text-center">Estado</th>
+                  <th>Acción Rápida</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-faltantes-clase-cuerpo">
+                <tr><td colspan="5" class="text-center text-muted py-2">No hay registros pendientes.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA DINÁMICA CONSOLIDADORA CON SEMÁFORO DE LA FICHA -->
+    <div class="row g-3 mb-4">
+      <div class="col-12">
+        <div class="card card-balance p-3 bg-white shadow-sm border-top border-4 border-primary">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+            <div>
+              <h5 class="fw-bold mb-0"><i class="bi bi-speedometer2 text-primary"></i> Estado Financiero de la Ficha en Tiempo Real</h5>
+              <small class="text-muted">Semáforo: <span class="badge badge-verde">> $50k</span> | <span class="badge badge-amarillo">$1 a $50k</span> | <span class="badge badge-rojo">$0 o Sobregiro</span></small>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+              <input type="text" id="filtro-buscador" class="form-control form-control-sm" placeholder="🔍 Buscar por nombre o doc..." onkeyup="filtrarTablaConsolidado()">
+              <button class="btn btn-sm btn-outline-primary" onclick="cargarConsolidadoDocente()"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+            <table class="table table-hover align-middle small text-nowrap mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>ID</th>
+                  <th>Aprendiz</th>
+                  <th>Documento</th>
+                  <th>Ficha</th>
+                  <th class="text-end">Saldo Banco</th>
+                  <th class="text-end">Caja Menor</th>
+                  <th class="text-end text-danger fw-bold">Total Gastado</th>
+                  <th class="text-center">Score Buró</th>
+                  <th class="text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-consolidado-cuerpo">
+                <tr><td colspan="9" class="text-center text-muted">Cargando métricas de la ficha...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCIONES DE DEDUCCIÓN POR FICHA -->
+    <div class="row g-3 mb-3">
+      <!-- DEDUCCIÓN GENERAL A LA FICHA -->
+      <div class="col-md-6">
+        <div class="card card-balance p-3 bg-white h-100 border-start border-4 border-warning">
+          <h6 class="fw-bold mb-1 text-dark"><i class="bi bi-people-fill text-warning"></i> Deducción a Toda la Ficha Seleccionada</h6>
+          <p class="text-muted small mb-2">Aplica un débito masivo (sobregiro penaliza -10 pts al Buró):</p>
+          
+          <div class="row g-2 mb-2">
+            <div class="col-md-6">
+              <label class="form-label small">Cuenta</label>
+              <select id="sel-ded-general-cuenta" class="form-select form-select-sm">
+                <option value="BANCO">Saldo Banco</option>
+                <option value="CAJA">Caja Menor</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">Monto ($)</label>
+              <input type="number" id="txt-ded-general-monto" class="form-control form-control-sm" placeholder="Ej: 10000">
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Motivo del Retiro</label>
+            <input type="text" id="txt-ded-general-motivo" class="form-control form-control-sm" placeholder="Ej: Materiales de clase">
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="chk-ded-general-penalizar">
+            <label class="form-check-label small" for="chk-ded-general-penalizar">Penalizar Buró adicional (-3 pts)</label>
+          </div>
+          <button class="btn btn-warning btn-sm w-100 fw-bold text-dark" onclick="ejecutarDeduccionGeneral()">
+            Aplicar Deducción a la Ficha
+          </button>
+        </div>
+      </div>
+
+      <!-- COBRO INDIVIDUAL DENTRO DE LA FICHA -->
+      <div class="col-md-6">
+        <div class="card card-balance p-3 bg-white h-100 border-start border-4 border-danger">
+          <h6 class="fw-bold mb-1 text-danger"><i class="bi bi-person-x-fill"></i> Cobro / Retiro Individual</h6>
+          <p class="text-muted small mb-2">Aplica un cargo a un aprendiz de esta ficha:</p>
+          
+          <div class="row g-2 mb-2">
+            <div class="col-md-6">
+              <label class="form-label small">Aprendiz</label>
+              <select id="sel-cobro-aprendiz" class="form-select form-select-sm"></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">Cuenta</label>
+              <select id="sel-cobro-cuenta" class="form-select form-select-sm">
+                <option value="BANCO">Saldo Banco</option>
+                <option value="CAJA">Caja Menor</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-md-6">
+              <label class="form-label small">Monto ($)</label>
+              <input type="number" id="txt-cobro-monto" class="form-control form-control-sm" placeholder="Ej: 15000">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">Motivo</label>
+              <input type="text" id="txt-cobro-concepto" class="form-control form-control-sm" placeholder="Ej: Préstamo o sanción">
+            </div>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="chk-cobro-penalizar">
+            <label class="form-check-label small" for="chk-cobro-penalizar">Penalizar Buró adicional (-3 pts)</label>
+          </div>
+          <button class="btn btn-danger btn-sm w-100 fw-bold" onclick="ejecutarCobro()">
+            Aplicar Cobro Individual
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MÓDULO IMPORTACIÓN EXCEL ASIGNANDO LA FICHA -->
+    <div class="card card-balance p-3 bg-white border-start border-4 border-info">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold mb-0"><i class="bi bi-file-earmark-spreadsheet-fill text-info"></i> Importación Masiva a la Ficha Actual</h6>
+        <span class="badge bg-primary" id="lbl-ficha-importacion">Asignando a Ficha: --</span>
+      </div>
+      <textarea id="txt-carga-masiva" class="form-control form-control-sm mb-2" rows="2" placeholder="Pega aquí columnas de Excel: Tipo Doc, Número Doc, Nombres, Apellidos..."></textarea>
+      <button class="btn btn-outline-dark btn-sm fw-bold" onclick="procesarCargaMasiva()">Importar Nuevos Aprendices a Esta Ficha</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= MODALES ================= -->
+
+<!-- MODAL TRANSFERENCIA APRENDIZ -->
+<div class="modal fade" id="modalTransferir" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold">Nueva Transferencia / Pago</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Cuenta de Origen</label>
+          <select id="tx-cuenta-origen" class="form-select">
+            <option value="BANCO">Saldo Banco</option>
+            <option value="CAJA">Caja Menor</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Tipo de Transacción</label>
+          <select id="tx-tipo-operacion" class="form-select">
+            <option value="Pago">Pago de Producto / Insumo</option>
+            <option value="Inversión">Inversión o Emprendimiento</option>
+            <option value="Préstamo">Abono o Cuota de Préstamo</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Destinatario</label>
+          <select id="tx-destinatario" class="form-select"></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Monto a Transferir ($)</label>
+          <input type="number" id="tx-monto" class="form-control" placeholder="Ej: 10000">
+          <small class="text-muted d-block mt-1">Aplica 2% comisión + 3% impuesto si es a un compañero.</small>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Concepto</label>
+          <input type="text" id="tx-concepto" class="form-control" placeholder="Ej: Materiales">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="procesarTransferencia()">Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACTIVACIÓN PRIMERA VEZ -->
+<div class="modal fade" id="modalActivacion" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold">Activar Cuenta por Primera Vez</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Selecciona tu Nombre</label>
+          <select id="act-aprendiz" class="form-select"></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Crea tu Usuario</label>
+          <input type="text" id="act-username" class="form-control" placeholder="Ej: ctorres" autocapitalize="none" autocorrect="off">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Crea tu Contraseña</label>
+          <input type="password" id="act-password" class="form-control" placeholder="Mínimo 4 caracteres">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm fw-bold" onclick="guardarActivacion()">Activar Cuenta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var usuarioActual = null;
+  var datosConsolidadoGlobal = [];
+  var fichaSeleccionada = "3536349";
+
+  // CARGA SEGURA PARA iOS / SAFARI
+  window.addEventListener('DOMContentLoaded', function() {
+    try {
+      if (typeof window.localStorage !== 'undefined') {
+        var uGuardado = localStorage.getItem('sena_banca_user');
+        var pGuardado = localStorage.getItem('sena_banca_pass');
+        if (uGuardado && pGuardado) {
+          document.getElementById('txt-user').value = uGuardado;
+          document.getElementById('txt-pass').value = pGuardado;
+          iniciarSesion();
+        }
+      }
+    } catch (e) {
+      console.warn("Storage restringido");
+    }
+  });
+
+  function iniciarSesion() {
+    var u = document.getElementById('txt-user').value.trim();
+    var p = document.getElementById('txt-pass').value.trim();
+    var recordar = document.getElementById('chk-recordar').checked;
+    var errorBox = document.getElementById('login-error');
+    
+    // TUS NUEVAS CREDENCIALES DOCENTE
+    if (u === '8356872' && p === '1984') {
+      if (recordar) {
+        try {
+          localStorage.setItem('sena_banca_user', u);
+          localStorage.setItem('sena_banca_pass', p);
+        } catch (e) {}
+      }
+      abrirPanelDocente();
+      return;
+    }
+
+    document.getElementById('btn-spinner').classList.remove('d-none');
+    document.getElementById('btn-text').textContent = 'Verificando...';
+
+    google.script.run.withSuccessHandler(function(res) {
+      document.getElementById('btn-spinner').classList.add('d-none');
+      document.getElementById('btn-text').textContent = 'Ingresar';
+      if (res.success) {
+        if (recordar) {
+          try {
+            localStorage.setItem('sena_banca_user', u);
+            localStorage.setItem('sena_banca_pass', p);
+          } catch (e) {}
+        }
+        usuarioActual = res.data;
+        cargarDashboard();
+      } else {
+        errorBox.textContent = res.message;
+        errorBox.classList.remove('d-none');
+      }
+    }).loginUsuario(u, p);
+  }
+
+  function cargarDashboard() {
+    document.getElementById('view-login').classList.add('d-none');
+    document.getElementById('view-dashboard').classList.remove('d-none');
+
+    document.getElementById('dash-nombre').textContent = usuarioActual.nombre;
+    document.getElementById('dash-id').textContent = 'ID: ' + usuarioActual.id;
+    document.getElementById('dash-ficha').textContent = 'Ficha: ' + (usuarioActual.ficha || 'Sin Ficha');
+    
+    var elBanco = document.getElementById('dash-banco');
+    elBanco.textContent = '$' + Number(usuarioActual.saldoBanco).toLocaleString('es-CO');
+    elBanco.className = 'fw-bold mt-1 ' + (usuarioActual.saldoBanco < 0 ? 'text-danger' : 'text-primary');
+
+    var elCaja = document.getElementById('dash-caja');
+    elCaja.textContent = '$' + Number(usuarioActual.saldoCaja).toLocaleString('es-CO');
+    elCaja.className = 'fw-bold mt-1 ' + (usuarioActual.saldoCaja < 0 ? 'text-danger' : 'text-success');
+
+    document.getElementById('dash-score').textContent = usuarioActual.score + ' / 100';
+
+    var badge = document.getElementById('badge-aprobacion');
+    badge.textContent = usuarioActual.score >= 70 ? 'Aprobado' : 'En Riesgo / Reprobado';
+    badge.className = 'badge ' + (usuarioActual.score >= 70 ? 'bg-success' : 'bg-danger');
+
+    // Cargar compañeros de la misma ficha
+    google.script.run.withSuccessHandler(function(lista) {
+      var sel = document.getElementById('tx-destinatario');
+      sel.innerHTML = lista
+        .filter(function(a) { return a.id !== usuarioActual.id; })
+        .map(function(a) { return '<option value="' + a.id + '">' + a.nombre + '</option>'; }).join('');
+    }).getListaAprendicesPorFicha(usuarioActual.ficha);
+
+    recargarMovimientos();
+  }
+
+  function reportarMiAsistencia() {
+    var btn = document.getElementById('btn-reportar-asistencia');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Registrando...';
+
+    google.script.run.withSuccessHandler(function(res) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-fingerprint"></i> Reportar mi Entrada';
+      
+      if (res.success) {
+        var msg = '¡Asistencia registrada para ' + res.numeroClase + '!\n';
+        if (res.descuento === 0) {
+          msg += 'Llegaste a tiempo (tolerancia 5 min). Recibiste $' + Number(res.montoConsignado).toLocaleString('es-CO') + ' (100%) y +1 pt al Buró.';
+        } else {
+          msg += 'Llegaste con ' + res.minutos + ' min desde inicio (-' + res.descuento + '%). Recibiste $' + Number(res.montoConsignado).toLocaleString('es-CO') + ' en Banco.';
+        }
+        alert(msg);
+        usuarioActual.saldoBanco = res.nuevoSaldo;
+        cargarDashboard();
+      } else {
+        alert(res.message);
+      }
+    }).reportarAsistenciaAprendiz(usuarioActual.id);
+  }
+
+  function recargarMovimientos() {
+    google.script.run.withSuccessHandler(function(movs) {
+      var tbody = document.getElementById('tbl-movimientos');
+      if (!movs || movs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay movimientos registrados.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = movs.map(function(m) {
+        return '<tr>' +
+          '<td>' + m.fecha + '</td>' +
+          '<td><span class="badge bg-light text-dark border">' + m.tipo + '</span></td>' +
+          '<td>' + m.concepto + '</td>' +
+          '<td><span class="' + (m.impactoScore >= 0 ? 'text-success' : 'text-danger') + ' fw-bold">' + (m.impactoScore > 0 ? '+' : '') + m.impactoScore + ' pts</span></td>' +
+          '<td class="text-end fw-bold ' + (m.esIngreso ? 'text-success' : 'text-danger') + '">' +
+            (m.esIngreso ? '+' : '-') + ' $' + Number(m.montoNeto).toLocaleString('es-CO') +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    }).getMovimientosAprendiz(usuarioActual.id);
+  }
+
+  function procesarTransferencia() {
+    var cuentaOri = document.getElementById('tx-cuenta-origen').value;
+    var tipo = document.getElementById('tx-tipo-operacion').value;
+    var dest = document.getElementById('tx-destinatario').value;
+    var monto = document.getElementById('tx-monto').value;
+    var concepto = document.getElementById('tx-concepto').value || tipo;
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('modalTransferir')).hide();
+        alert('Transferencia enviada con éxito.');
+        iniciarSesion();
+      } else {
+        alert(res.message);
+      }
+    }).realizarTransferenciaAvanzada(usuarioActual.id, dest, cuentaOri, tipo, monto, concepto);
+  }
+
+  // ================= PANEL DOCENTE (MULTI-FICHA) =================
+  function abrirPanelDocente() {
+    document.getElementById('view-login').classList.add('d-none');
+    document.getElementById('view-docente').classList.remove('d-none');
+    
+    // Cargar selector de fichas
+    google.script.run.withSuccessHandler(function(fichas) {
+      var sel = document.getElementById('sel-ficha-activa');
+      sel.innerHTML = fichas.map(function(f) {
+        return '<option value="' + f + '">Ficha ' + f + '</option>';
+      }).join('');
+      
+      fichaSeleccionada = sel.value || '3536349';
+      actualizarTodoPorFicha();
+    }).getListaFichas();
+  }
+
+  function cambiarFichaDocente() {
+    fichaSeleccionada = document.getElementById('sel-ficha-activa').value;
+    actualizarTodoPorFicha();
+  }
+
+  function crearNuevaFichaModal() {
+    var nuevaF = prompt("Digita el número de la nueva ficha (ej: 2854910):");
+    if (nuevaF && nuevaF.trim()) {
+      nuevaF = nuevaF.trim();
+      var sel = document.getElementById('sel-ficha-activa');
+      var opt = document.createElement('option');
+      opt.value = nuevaF;
+      opt.textContent = 'Ficha ' + nuevaF;
+      sel.appendChild(opt);
+      sel.value = nuevaF;
+      cambiarFichaDocente();
+    }
+  }
+
+  function actualizarTodoPorFicha() {
+    document.getElementById('lbl-ficha-importacion').textContent = 'Asignando a Ficha: ' + fichaSeleccionada;
+    comprobarEstadoSesionDocente();
+    cargarConsolidadoDocente();
+    recargarListaDocente();
+    consultarInformeAsistentes();
+  }
+
+  function comprobarEstadoSesionDocente() {
+    google.script.run.withSuccessHandler(function(sesion) {
+      var txt = document.getElementById('txt-estado-sesion');
+      var btnActivar = document.getElementById('btn-activar-clase');
+      var btnCerrar = document.getElementById('btn-cerrar-clase');
+      var selClase = document.getElementById('sel-numero-clase');
+
+      if (sesion.activa) {
+        var horaInicio = new Date(sesion.inicio).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        txt.innerHTML = '<span class="badge bg-success">EN CURSO</span> <strong>' + sesion.numeroClase + ' (Ficha ' + sesion.ficha + ')</strong> | Inicio: ' + horaInicio + ' | Base: <strong>$' + Number(sesion.valorBase).toLocaleString('es-CO') + '</strong>';
+        btnActivar.classList.add('d-none');
+        btnCerrar.classList.remove('d-none');
+        selClase.value = sesion.numeroClase;
+        document.getElementById('sel-filtro-informe-clase').value = sesion.numeroClase;
+      } else {
+        txt.innerHTML = '<span class="badge bg-secondary">INACTIVA</span> Ninguna clase activa en Ficha ' + fichaSeleccionada + '.';
+        btnActivar.classList.remove('d-none');
+        btnCerrar.classList.add('d-none');
+      }
+    }).getEstadoSesionClase(fichaSeleccionada);
+  }
+
+  function iniciarClaseDocente() {
+    var clase = document.getElementById('sel-numero-clase').value;
+    var valor = document.getElementById('txt-sesion-valor-base').value;
+    if (!valor || Number(valor) <= 0) return alert('Digita el valor base a consignar.');
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.success) {
+        alert('¡' + res.numeroClase + ' iniciada para la Ficha ' + res.ficha + '! El reloj está corriendo.');
+        comprobarEstadoSesionDocente();
+        consultarInformeAsistentes();
+      }
+    }).activarSesionClase(clase, valor, fichaSeleccionada);
+  }
+
+  function finalizarClaseDocente() {
+    if (!confirm('¿Deseas cerrar el registro de asistencia para esta clase en la Ficha ' + fichaSeleccionada + '?')) return;
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.success) {
+        alert('Clase cerrada con éxito.');
+        comprobarEstadoSesionDocente();
+        consultarInformeAsistentes();
+      }
+    }).cerrarSesionClase(fichaSeleccionada);
+  }
+
+  function consultarInformeAsistentes() {
+    var clase = document.getElementById('sel-filtro-informe-clase').value;
+    var tbodyAsis = document.getElementById('tbl-asistentes-clase-cuerpo');
+    var tbodyFalt = document.getElementById('tbl-faltantes-clase-cuerpo');
+    
+    tbodyAsis.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Cargando reporte...</td></tr>';
+    tbodyFalt.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Cargando ausentes...</td></tr>';
+
+    google.script.run.withSuccessHandler(function(data) {
+      document.getElementById('cnt-asistentes').textContent = data.totalAsistentes;
+      document.getElementById('cnt-faltantes').textContent = data.totalFaltantes;
+
+      if (!data.asistentes || data.asistentes.length === 0) {
+        tbodyAsis.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-2">No hay registros en ' + clase + ' para esta ficha.</td></tr>';
+      } else {
+        tbodyAsis.innerHTML = data.asistentes.map(function(a) {
+          return '<tr>' +
+            '<td><span class="badge bg-secondary">' + a.id + '</span></td>' +
+            '<td class="fw-semibold">' + a.nombre + '</td>' +
+            '<td class="text-muted">' + a.documento + '</td>' +
+            '<td>' + a.fecha + '</td>' +
+            '<td class="text-end fw-bold text-success">+$' + Number(a.monto).toLocaleString('es-CO') + '</td>' +
+            '<td><small class="text-muted">' + a.detalle + '</small></td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      if (!data.faltantes || data.faltantes.length === 0) {
+        tbodyFalt.innerHTML = '<tr><td colspan="5" class="text-center text-success py-2 fw-semibold"><i class="bi bi-check-all"></i> ¡Todos los aprendices de la ficha asistieron a ' + clase + '!</td></tr>';
+      } else {
+        tbodyFalt.innerHTML = data.faltantes.map(function(f) {
+          return '<tr>' +
+            '<td><span class="badge bg-secondary">' + f.id + '</span></td>' +
+            '<td class="fw-semibold text-danger">' + f.nombre + '</td>' +
+            '<td class="text-muted">' + f.documento + '</td>' +
+            '<td class="text-center"><span class="badge bg-danger">Sin Registrar</span></td>' +
+            '<td><button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="cobrarFaltaDirecta(\'' + f.id + '\')"><i class="bi bi-dash-circle"></i> Sancionar</button></td>' +
+          '</tr>';
+        }).join('');
+      }
+    }).getInformeAsistenciaClase(clase, fichaSeleccionada);
+  }
+
+  function cobrarFaltaDirecta(idAprendiz) {
+    document.getElementById('sel-cobro-aprendiz').value = idAprendiz;
+    document.getElementById('txt-cobro-concepto').value = 'Inasistencia a ' + document.getElementById('sel-filtro-informe-clase').value;
+    document.getElementById('txt-cobro-monto').value = '20000';
+    document.getElementById('sel-cobro-aprendiz').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cargarConsolidadoDocente() {
+    google.script.run.withSuccessHandler(function(data) {
+      datosConsolidadoGlobal = data;
+      renderTablaConsolidada(data);
+    }).getConsolidadoDocente(fichaSeleccionada);
+  }
+
+  function obtenerClaseSemaforo(valor) {
+    if (valor < 0) return 'badge-rojo fw-bold';
+    if (valor === 0) return 'badge-rojo';
+    if (valor <= 50000) return 'badge-amarillo';
+    return 'badge-verde';
+  }
+
+  function renderTablaConsolidada(lista) {
+    var tbody = document.getElementById('tbl-consolidado-cuerpo');
+    if (!lista || lista.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No hay aprendices registrados en la Ficha ' + fichaSeleccionada + '.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = lista.map(function(a) {
+      var clsBanco = obtenerClaseSemaforo(a.saldoBanco);
+      var clsCaja = obtenerClaseSemaforo(a.saldoCaja);
+      var esAprobado = a.score >= 70;
+
+      return '<tr>' +
+        '<td><span class="badge bg-secondary">' + a.id + '</span></td>' +
+        '<td class="fw-semibold">' + a.nombre + '</td>' +
+        '<td class="text-muted">' + a.documento + '</td>' +
+        '<td><span class="badge bg-info text-dark">' + a.ficha + '</span></td>' +
+        '<td class="text-end"><span class="badge ' + clsBanco + '">$' + Number(a.saldoBanco).toLocaleString('es-CO') + '</span></td>' +
+        '<td class="text-end"><span class="badge ' + clsCaja + '">$' + Number(a.saldoCaja).toLocaleString('es-CO') + '</span></td>' +
+        '<td class="text-end fw-bold text-danger">-$' + Number(a.totalGastado).toLocaleString('es-CO') + '</td>' +
+        '<td class="text-center fw-bold ' + (esAprobado ? 'text-success' : 'text-danger') + '">' + a.score + ' pts</td>' +
+        '<td class="text-center"><span class="badge ' + (esAprobado ? 'bg-success' : 'bg-danger') + '">' + a.estadoAprobacion + '</span></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function filtrarTablaConsolidado() {
+    var filtro = document.getElementById('filtro-buscador').value.toLowerCase();
+    var filtrados = datosConsolidadoGlobal.filter(function(a) { 
+      return a.nombre.toLowerCase().indexOf(filtro) !== -1 || 
+        String(a.documento).indexOf(filtro) !== -1 ||
+        a.id.toLowerCase().indexOf(filtro) !== -1;
+    });
+    renderTablaConsolidada(filtrados);
+  }
+
+  function recargarListaDocente() {
+    google.script.run.withSuccessHandler(function(lista) {
+      var selCobro = document.getElementById('sel-cobro-aprendiz');
+      var aprendicesPuros = lista.filter(function(a) { return a.id !== 'PROFE_EMPRESA'; });
+      selCobro.innerHTML = aprendicesPuros.map(function(a) {
+        return '<option value="' + a.id + '">' + a.nombre + ' (' + a.id + ')</option>';
+      }).join('');
+    }).getListaAprendicesPorFicha(fichaSeleccionada);
+  }
+
+  function ejecutarDeduccionGeneral() {
+    var cta = document.getElementById('sel-ded-general-cuenta').value;
+    var monto = document.getElementById('txt-ded-general-monto').value;
+    var motivo = document.getElementById('txt-ded-general-motivo').value;
+    var penalizar = document.getElementById('chk-ded-general-penalizar').checked;
+
+    if (!monto || Number(monto) <= 0) return alert('Digita el monto que vas a deducir.');
+    if (!motivo.trim()) return alert('Debes especificar el motivo.');
+
+    var confirmar = confirm('¿Descontar $' + Number(monto).toLocaleString('es-CO') + ' a TODOS los aprendices de la FICHA ' + fichaSeleccionada + '?');
+    if (!confirmar) return;
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.success) {
+        alert('Deducción masiva exitosa a ' + res.total + ' aprendices de la ficha.');
+        document.getElementById('txt-ded-general-monto').value = '';
+        document.getElementById('txt-ded-general-motivo').value = '';
+        cargarConsolidadoDocente();
+      } else {
+        alert(res.message);
+      }
+    }).aplicarDeduccionGeneralFicha(fichaSeleccionada, monto, cta, motivo, penalizar);
+  }
+
+  function ejecutarCobro() {
+    var id = document.getElementById('sel-cobro-aprendiz').value;
+    var cta = document.getElementById('sel-cobro-cuenta').value;
+    var monto = document.getElementById('txt-cobro-monto').value;
+    var concepto = document.getElementById('txt-cobro-concepto').value;
+    var penalizar = document.getElementById('chk-cobro-penalizar').checked;
+
+    if (!monto || Number(monto) <= 0) return alert('Ingresa un monto válido.');
+    if (!concepto.trim()) return alert('El motivo es obligatorio.');
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.success) {
+        alert('Cobro individual aplicado exitosamente.');
+        document.getElementById('txt-cobro-monto').value = '';
+        document.getElementById('txt-cobro-concepto').value = '';
+        cargarConsolidadoDocente();
+      } else {
+        alert(res.message);
+      }
+    }).aplicarCobroInstructor(id, monto, cta, concepto, penalizar);
+  }
+
+  function procesarCargaMasiva() {
+    var texto = document.getElementById('txt-carga-masiva').value;
+    if (!texto.trim()) return alert('Pega primero los datos desde tu archivo de Excel.');
+    
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.success) {
+        alert('¡Listo! Se importaron ' + res.total + ' aprendices a la Ficha ' + res.ficha + '.');
+        document.getElementById('txt-carga-masiva').value = '';
+        recargarListaDocente();
+        cargarConsolidadoDocente();
+      } else {
+        alert('Error: ' + res.message);
+      }
+    }).importarAprendicesMasivoConFicha(texto, fichaSeleccionada);
+  }
+
+  function abrirModalActivacion() {
+    google.script.run.withSuccessHandler(function(pendientes) {
+      if (!pendientes || pendientes.length === 0) {
+        alert('No hay aprendices pendientes de activar clave.');
+        return;
+      }
+      var sel = document.getElementById('act-aprendiz');
+      sel.innerHTML = pendientes.map(function(p) {
+        return '<option value="' + p.id + '">' + p.nombre + ' (Ficha: ' + p.ficha + ' - Doc: ' + p.documento + ')</option>';
+      }).join('');
+      new bootstrap.Modal(document.getElementById('modalActivacion')).show();
+    }).getAprendicesPendientesActivacion();
+  }
+
+  function guardarActivacion() {
+    var id = document.getElementById('act-aprendiz').value;
+    var user = document.getElementById('act-username').value;
+    var pass = document.getElementById('act-password').value;
+
+    if (!user || !pass) return alert('Por favor completa todos los campos.');
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('modalActivacion')).hide();
+        alert('¡Cuenta activada con éxito! Ya puedes iniciar sesión.');
+        document.getElementById('txt-user').value = user;
+        document.getElementById('txt-pass').value = pass;
+      } else {
+        alert(res.message);
+      }
+    }).registrarClavePrimeraVez(id, user, pass);
+  }
+
+  function cerrarSesion() {
+    try {
+      localStorage.removeItem('sena_banca_user');
+      localStorage.removeItem('sena_banca_pass');
+    } catch (e) {}
+    location.reload();
+  }
+</script>
+</body>
+</html>
